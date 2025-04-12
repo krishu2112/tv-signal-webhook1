@@ -1,0 +1,31 @@
+//@version=5
+strategy("SMC Strategy", overlay=true)
+
+ema9 = ta.ema(close, 9)
+ema21 = ta.ema(close, 21)
+bos_up = high > ta.highest(high, 5)[1]
+bos_down = low < ta.lowest(low, 5)[1]
+isBullishOB = close > open and close[1] < open[1] and close[2] < open[2]
+isBearishOB = close < open and close[1] > open[1] and close[2] > open[2]
+fvgBuy = low[1] > high[2]
+fvgSell = high[1] < low[2]
+avgVol = ta.sma(volume, 20)
+instVol = volume > avgVol * 1.5
+buySignal = ta.crossover(ema9, ema21) and bos_up and isBullishOB and fvgBuy and instVol
+sellSignal = ta.crossunder(ema9, ema21) and bos_down and isBearishOB and fvgSell and instVol
+atr = ta.atr(14)
+buySL = low - atr
+buyTP = close + (close - buySL) * 2
+sellSL = high + atr
+sellTP = close - (sellSL - close) * 2
+
+if buySignal
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL Long", from_entry="Long", stop=buySL, limit=buyTP)
+
+if sellSignal
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL Short", from_entry="Short", stop=sellSL, limit=sellTP)
+
+plotshape(buySignal, title="BUY", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(sellSignal, title="SELL", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
